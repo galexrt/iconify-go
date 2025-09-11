@@ -5,7 +5,7 @@ package main
 import (
 	"net/http"
 
-	iconifygo "github.com/andyburri/iconify-go"
+	iconifygo "github.com/galexrt/iconify-go"
 )
 
 func main() {

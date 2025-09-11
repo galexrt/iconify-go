@@ -1,4 +1,4 @@
-module github.com/andyburri/iconify-go
+module github.com/galexrt/iconify-go
 
 go 1.24.2
 
