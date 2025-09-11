@@ -104,10 +104,9 @@ func BenchmarkParseIconSet(b *testing.B) {
 
 	b.ResetTimer()
 
-	var num = 10000
+	num := 10000
 
 	for i := 0; i < num; i++ {
 		parseIconSet(iconSet, []string{"video", "find"})
 	}
-
 }

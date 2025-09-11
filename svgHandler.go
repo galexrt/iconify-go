@@ -10,12 +10,6 @@ import (
 	"strings"
 )
 
-type SVGparams struct {
-	Color, Width, Height string
-	Flip                 []string
-	Rotate               string
-}
-
 func (s *IconifyServer) handleSVG(w http.ResponseWriter, r *http.Request) {
 	prefix, iconName := extractPrefixAndIcon(r.URL.Path)
 	if prefix == "" || iconName == "" {

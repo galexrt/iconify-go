@@ -4,12 +4,16 @@ import (
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/puzpuzpuz/xsync/v4"
 )
 
 type IconifyServer struct {
 	BasePath    string
 	IconsetPath string
 	Handlers    handlerFlags
+
+	cache *xsync.Map[string, IconSetResponse]
 }
 
 type handlerFlags struct {
@@ -18,13 +22,26 @@ type handlerFlags struct {
 	JSON bool
 }
 
-func NewIconifyServer(basePath, iconsetPath string, handlers ...string) *IconifyServer {
-	flags := parseHandlerFlags(handlers)
-	return &IconifyServer{
+func NewIconifyServer(basePath string, iconsetPath string, opts ...Option) (*IconifyServer, error) {
+	flags := handlerFlags{}
+	s := &IconifyServer{
 		BasePath:    path.Clean("/" + basePath),
 		IconsetPath: iconsetPath,
 		Handlers:    flags,
+		cache:       xsync.NewMap[string, IconSetResponse](),
 	}
+
+	if len(opts) == 0 {
+		opts = append(opts, WithHandlers())
+	}
+
+	for _, opt := range opts {
+		if err := opt(s); err != nil {
+			return nil, err
+		}
+	}
+
+	return s, nil
 }
 
 func parseHandlerFlags(handlers []string) handlerFlags {
@@ -38,12 +55,15 @@ func parseHandlerFlags(handlers []string) handlerFlags {
 		switch strings.ToLower(handler) {
 		case "svg":
 			h.SVG = true
+
 		case "json":
 			h.JSON = true
+
 		case "all":
 			h.All = true
 		}
 	}
+
 	return h
 }
 

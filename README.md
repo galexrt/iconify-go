@@ -1,5 +1,7 @@
 # Iconify Server in Go
 
+> Forked from [andyburri/iconify-go](https://github.com/andyburri/iconify-go) modified to add icon set caching logic.
+
 This is a simple implementation of the [iconify server API](https://iconify.design/docs/api/queries.html) as a Go module. It provides an HTTP handler to serve SVG icons or JSON data.
 
 ## Implemented Endpoints
@@ -14,7 +16,7 @@ This is a simple implementation of the [iconify server API](https://iconify.desi
 **Instantiate the Server with**
 
 ```go
-iconifygo.NewIconifyServer(basePath, iconsetPath, handlers...)
+iconifygo.NewIconifyServer(basePath, iconsetPath, iconifygo.WithHandlers(handlers...))
 ```
 
 where `basePath` is the base path for serving icons and `iconsetPath` is the path to the directory containing the icon sets.

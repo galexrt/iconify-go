@@ -2,39 +2,20 @@ package iconifygo
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-type Icon struct {
-	Body   string `json:"body"`
-	Left   int    `json:"left,omitempty"`
-	Top    int    `json:"top,omitempty"`
-	Width  int    `json:"width,omitempty"`
-	Height int    `json:"height,omitempty"`
-	HFlip  bool   `json:"hFlip,omitempty"`
-	VFlip  bool   `json:"vFlip,omitempty"`
-	Rotate int    `json:"rotate,omitempty"`
+// HTTPError represents an error with an associated HTTP status code.
+type HTTPError struct {
+	StatusCode int
+	Message    string
 }
 
-type Alias struct {
-	Parent string `json:"parent"`
-	HFlip  bool   `json:"hFlip,omitempty"`
-	VFlip  bool   `json:"vFlip,omitempty"`
-	Rotate int    `json:"rotate,omitempty"`
-}
-type IconSetResponse struct {
-	Prefix       string           `json:"prefix"`
-	LastModified uint             `json:"lastModified,omitempty"`
-	Aliases      map[string]Alias `json:"aliases,omitempty"`
-	Width        int              `json:"width,omitempty"`
-	Height       int              `json:"height,omitempty"`
-	Icons        map[string]Icon  `json:"icons"`
-	NotFound     []string         `json:"not_found,omitempty"`
+func (e *HTTPError) Error() string {
+	return e.Message
 }
 
 func loadIconSet(fileName, iconDir string) (IconSetResponse, error) {
@@ -54,9 +35,9 @@ func loadIconSet(fileName, iconDir string) (IconSetResponse, error) {
 }
 
 func parseIconSet(iconSet IconSetResponse, iconNames []string) (result IconSetResponse) {
-	var icons = make(map[string]Icon, len(iconNames))
+	icons := make(map[string]Icon, len(iconNames))
 	var notFound []string
-	var aliases = make(map[string]Alias, len(iconNames))
+	aliases := make(map[string]Alias, len(iconNames))
 
 	for _, iconName := range iconNames {
 		icon, alias, err := getIconFromSet(&iconSet, iconName)
@@ -90,35 +71,17 @@ func parseIconSet(iconSet IconSetResponse, iconNames []string) (result IconSetRe
 	return result
 }
 
-func getIconFromSet(iconSet *IconSetResponse, iconName string) (Icon, Alias, error) {
-	if _, ok := iconSet.Icons[iconName]; ok {
-		return iconSet.Icons[iconName], Alias{}, nil
-	} else {
-		if _, ok := iconSet.Aliases[iconName]; ok {
-			alias := iconSet.Aliases[iconName]
-			if _, ok := iconSet.Icons[iconSet.Aliases[iconName].Parent]; ok {
-				icon := iconSet.Icons[iconSet.Aliases[iconName].Parent]
-				return icon, alias, nil
-			}
-
-			return Icon{}, Alias{}, fmt.Errorf("Parent not found for alias %s", iconName)
-		}
-
-		return Icon{}, Alias{}, fmt.Errorf("Icon %s not found", iconName)
-	}
-}
-
 func (s *IconifyServer) handleJSON(w http.ResponseWriter, r *http.Request) {
 	dirParts := strings.Split(r.URL.Path, "/")
 	file := strings.Split(r.URL.Path, "/")[len(dirParts)-1]
 
-	iconSet, err := loadIconSet(file, s.IconsetPath)
+	iconSet, err := s.getOrLoadIconSet(strings.TrimSuffix(file, ".json"))
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			http.Error(w, "File not found", http.StatusNotFound)
+		if httpErr, ok := err.(*HTTPError); ok {
+			http.Error(w, httpErr.Message, httpErr.StatusCode)
 			return
 		}
-
+		// fallback for unexpected error types
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
