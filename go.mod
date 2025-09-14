@@ -3,7 +3,7 @@ module github.com/galexrt/iconify-go
 go 1.24.2
 
 require (
-	github.com/puzpuzpuz/xsync/v4 v4.1.0
+	github.com/puzpuzpuz/xsync/v4 v4.2.0
 	github.com/stretchr/testify v1.10.0
 )
 
